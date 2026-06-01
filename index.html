@@ -3675,19 +3675,28 @@ function savePassword(){
   toast('✅ Password berhasil diubah!');
 }
 function resetAllData(){
-  if(confirm('RESET semua data?\n\nIni akan menghapus semua leads, produk, dan pengaturan (di local DAN cloud). Tidak bisa dibatalkan!')){
-    ['od_cfg','od_prods','od_leads'].forEach(k=>localStorage.removeItem(k));
+  if(confirm('FACTORY RESET semua data?\n\nIni akan menghapus SEMUA data (leads, produk, CS, akun CS, advertisers, QR, pengaturan) di LOCAL dan CLOUD, lalu balikin password admin ke "admin123". Tidak bisa dibatalkan!')){
+    // Bersihkan SEMUA cache lokal biar gak ke-upload balik
+    ['od_cfg','od_prods','od_leads','od_cs','od_cs_users','od_ad_users','od_qr_templates','od_local_backup','od_fb_cfg'].forEach(k=>localStorage.removeItem(k));
     if(fb.configured){
       Promise.all([
         syncBulkDelete(FB_COLLECTIONS.leads),
         syncBulkDelete(FB_COLLECTIONS.prods),
+        syncBulkDelete(FB_COLLECTIONS.cs),
+        syncBulkDelete(FB_COLLECTIONS.cs_users),
+        syncBulkDelete(FB_COLLECTIONS.ad_users),
+        syncBulkDelete(FB_COLLECTIONS.qr_templates),
       ]).then(()=>{
-        // Reset cfg doc to defaults
-        dbWriteDoc(FB_COLLECTIONS.cfg, 'main', Object.assign({}, DEF));
+        // Reset cfg doc ke default (adminPass balik ke admin123)
+        return dbWriteDoc(FB_COLLECTIONS.cfg, 'main', Object.assign({}, DEF));
+      }).then(()=>{
+        toast('🔄 Factory reset selesai — reload...');
+        setTimeout(()=>location.reload(),1200);
       });
+    } else {
+      toast('🔄 Semua data lokal direset');
+      setTimeout(()=>location.reload(),1200);
     }
-    toast('🔄 Semua data direset');
-    setTimeout(()=>location.reload(),1200);
   }
 }
 
